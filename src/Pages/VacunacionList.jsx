@@ -14,14 +14,10 @@ const VacunacionList = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVacunaciones(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  useEffect(() => {
-    fetchVacunaciones();
-  }, []);
+  useEffect(() => { fetchVacunaciones(); }, []);
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Desea eliminar este registro de vacunación?')) {
@@ -30,9 +26,7 @@ const VacunacionList = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchVacunaciones();
-      } catch (error) {
-        alert(error.response?.data?.message || 'Error al eliminar el registro.');
-      }
+      } catch (error) { alert('Error al eliminar el registro.'); }
     }
   };
 
@@ -49,7 +43,7 @@ const VacunacionList = () => {
             <th>Caravana Animal</th>
             <th>Vacuna</th>
             <th>Dosis (ml)</th>
-            {user?.rol === 'Administrador' && <th>Acciones</th>}
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -59,11 +53,12 @@ const VacunacionList = () => {
               <td className="fw-bold">{v.caravana}</td>
               <td>{v.vacuna_nombre}</td>
               <td>{v.dosis}</td>
-              {user?.rol === 'Administrador' && (
-                <td>
+              <td>
+                <Link to={`/vacunaciones/editar/${v.id}`} className="btn btn-warning btn-sm me-1">Editar</Link>
+                {user?.rol === 'Administrador' && (
                   <button onClick={() => handleDelete(v.id)} className="btn btn-danger btn-sm">Eliminar</button>
-                </td>
-              )}
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -71,4 +66,5 @@ const VacunacionList = () => {
     </div>
   );
 };
+
 export default VacunacionList;

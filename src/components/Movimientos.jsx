@@ -1,12 +1,14 @@
 import { useState } from 'react';
 
 const Movimientos = () => {
+  // Este componente de demostración conserva su historial únicamente en el estado local.
   const [movimientos, setMovimientos] = useState([
     { id: 1, caravana: 'AR-101', tipo: 'Traslado', origen: 'Potrero Norte 1', destino: 'Potrero Sur 2', fecha: '2026-05-10', motivo: 'Rotación de pasturas' },
   ]);
 
   const [form, setForm] = useState({ caravana: '', tipo: 'Traslado', origen: '', destino: '', fecha: '', motivo: '' });
 
+  // Añade el movimiento al historial local y reinicia los campos del formulario.
   const handleGuardar = (e) => {
     e.preventDefault();
     setMovimientos([...movimientos, { ...form, id: Date.now() }]);

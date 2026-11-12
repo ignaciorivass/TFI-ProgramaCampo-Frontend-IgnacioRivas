@@ -14,14 +14,10 @@ const MovimientoList = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMovimientos(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  useEffect(() => {
-    fetchMovimientos();
-  }, []);
+  useEffect(() => { fetchMovimientos(); }, []);
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Desea eliminar este movimiento del historial?')) {
@@ -30,9 +26,7 @@ const MovimientoList = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchMovimientos();
-      } catch (error) {
-        alert(error.response?.data?.message || 'Error al eliminar el movimiento.');
-      }
+      } catch (error) { alert('Error al eliminar el movimiento.'); }
     }
   };
 
@@ -50,7 +44,7 @@ const MovimientoList = () => {
             <th>Tipo</th>
             <th>Origen</th>
             <th>Destino</th>
-            {user?.rol === 'Administrador' && <th>Acciones</th>}
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -61,11 +55,12 @@ const MovimientoList = () => {
               <td><span className="badge bg-primary">{m.tipo}</span></td>
               <td>{m.origen || '-'}</td>
               <td>{m.destino || '-'}</td>
-              {user?.rol === 'Administrador' && (
-                <td>
+              <td>
+                <Link to={`/movimientos/editar/${m.id}`} className="btn btn-warning btn-sm me-1">Editar</Link>
+                {user?.rol === 'Administrador' && (
                   <button onClick={() => handleDelete(m.id)} className="btn btn-danger btn-sm">Eliminar</button>
-                </td>
-              )}
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -73,4 +68,5 @@ const MovimientoList = () => {
     </div>
   );
 };
+
 export default MovimientoList;

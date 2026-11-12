@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const Register = () => {
+  // El estado reúne los datos de alta y el mensaje de error devuelto por el servidor.
   const [form, setForm] = useState({ nombre: '', email: '', password: '', rol: 'Peón' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Crea la cuenta; ante éxito dirige al inicio de sesión y ante error informa al usuario.
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {

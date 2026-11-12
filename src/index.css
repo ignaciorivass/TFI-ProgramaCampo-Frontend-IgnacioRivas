@@ -1,3 +1,4 @@
+/* Estilos globales básicos para unificar tipografía, espaciado y colores. */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -16,7 +17,7 @@ body {
   margin: 0 auto;
 }
 
-/* Tablas */
+/* Presentación común de las tablas de listados. */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -42,7 +43,7 @@ tr:hover {
   background-color: #f1f1f1;
 }
 
-/* Botones y Formulares */
+/* Apariencia de botones y campos de formulario. */
 button {
   padding: 8px 14px;
   border: none;
@@ -73,7 +74,7 @@ input, select {
   border-radius: 4px;
 }
 
-/* Card */
+/* Contenedores tipo tarjeta usados para agrupar formularios y contenido. */
 .card {
   background: white;
   padding: 20px;

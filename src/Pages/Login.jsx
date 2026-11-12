@@ -4,11 +4,13 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 const Login = () => {
+  // El formulario conserva las credenciales hasta enviarlas al servicio de autenticación.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useAuthStore(state => state.login);
   const navigate = useNavigate();
 
+  // Si el servidor valida las credenciales, inicia la sesión global y abre los animales.
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {

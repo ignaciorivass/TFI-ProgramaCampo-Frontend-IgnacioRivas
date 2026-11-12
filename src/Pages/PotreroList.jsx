@@ -14,14 +14,10 @@ const PotreroList = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPotreros(res.data);
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) { console.error(error); }
   };
 
-  useEffect(() => {
-    fetchPotreros();
-  }, []);
+  useEffect(() => { fetchPotreros(); }, []);
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar potrero definitivamente?')) {
@@ -31,7 +27,7 @@ const PotreroList = () => {
         });
         fetchPotreros();
       } catch (error) {
-        alert(error.response?.data?.message || 'No se puede eliminar: hay animales en este potrero.');
+        alert(error.response?.data?.error || 'No se puede eliminar: hay animales en este potrero.');
       }
     }
   };
@@ -40,9 +36,7 @@ const PotreroList = () => {
     <div>
       <div className="d-flex justify-content-between mb-3">
         <h2>Gestión de Potreros</h2>
-        {user?.rol === 'Administrador' && (
-          <Link to="/potreros/nuevo" className="btn btn-success">Nuevo Potrero</Link>
-        )}
+        <Link to="/potreros/nuevo" className="btn btn-success">Nuevo Potrero</Link>
       </div>
       <table className="table table-striped table-bordered shadow-sm">
         <thead className="table-dark">
@@ -50,7 +44,7 @@ const PotreroList = () => {
             <th>Nombre</th>
             <th>Superficie (ha)</th>
             <th>Capacidad</th>
-            {user?.rol === 'Administrador' && <th>Acciones</th>}
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -59,11 +53,12 @@ const PotreroList = () => {
               <td>{p.nombre}</td>
               <td>{p.superficie}</td>
               <td>{p.capacidad} animales</td>
-              {user?.rol === 'Administrador' && (
-                <td>
+              <td>
+                <Link to={`/potreros/editar/${p.id}`} className="btn btn-warning btn-sm me-1">Editar</Link>
+                {user?.rol === 'Administrador' && (
                   <button onClick={() => handleDelete(p.id)} className="btn btn-danger btn-sm">Eliminar</button>
-                </td>
-              )}
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

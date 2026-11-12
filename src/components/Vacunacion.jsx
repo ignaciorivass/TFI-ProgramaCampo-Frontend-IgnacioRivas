@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 const Vacunacion = () => {
+  // Este componente de demostración trabaja con registros locales en memoria.
   const [registros, setRegistros] = useState([
     { id: 1, caravana: 'AR-101', vacuna: 'Aftosa', dosis: '2ml', enfermedad: 'Fiebre Aftosa', fecha: '2026-03-10' },
     { id: 2, caravana: 'AR-102', vacuna: 'Carbunclo', dosis: '2ml', enfermedad: 'Carbunclo bacteridiano', fecha: '2026-04-01' },
@@ -8,6 +9,7 @@ const Vacunacion = () => {
 
   const [form, setForm] = useState({ caravana: '', vacuna: '', dosis: '', enfermedad: '', fecha: '' });
 
+  // Agrega el formulario al historial local y limpia los campos para otra carga.
   const handleGuardar = (e) => {
     e.preventDefault();
     setRegistros([...registros, { ...form, id: Date.now() }]);
