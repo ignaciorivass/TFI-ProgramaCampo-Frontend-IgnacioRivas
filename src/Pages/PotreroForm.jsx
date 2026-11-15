@@ -1,58 +1,154 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
 
-const PotreroForm = () => {
+const API_URL = 'http://localhost:3000/api';
+
+export default function PotreroForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const token = useAuthStore(state => state.token);
-  const [form, setForm] = useState({ nombre: '', superficie: '', capacidad: '' });
+
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    nombre: '',
+    superficie: '',
+    capacidad_maxima: '',
+  });
+
+  const getHeaders = () => ({
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+  });
 
   useEffect(() => {
-    if (id) {
-      axios.get(`http://localhost:3000/api/potreros/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(res => setForm(res.data));
-    }
-  }, [id, token]);
+    if (!id) return;
+    const cargarPotrero = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/potreros`, getHeaders());
+        const potrero = res.data.find((p) => String(p.id) === String(id));
+        if (potrero) {
+          setFormData({
+            nombre: potrero.nombre || '',
+            superficie: potrero.superficie ?? potrero.hectareas ?? '',
+            capacidad_maxima: potrero.capacidad_maxima ?? potrero.capacidad ?? '',
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Error al cargar los datos del potrero.');
+      }
+    };
+    cargarPotrero();
+  }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const config = { headers: { Authorization: `Bearer ${token}` } };
+    setError('');
+
+    const nombreLimpio = formData.nombre.trim();
+    if (nombreLimpio.length < 3 || nombreLimpio.length > 50 || !/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(nombreLimpio)) {
+      setError('El nombre del potrero debe tener entre 3 y 50 caracteres e incluir letras (Ej: Potrero Norte 1).');
+      return;
+    }
+
+    const superficieNum = Number(formData.superficie);
+    if (isNaN(superficieNum) || superficieNum < 0.5 || superficieNum > 50000) {
+      setError('La superficie debe estar entre 0,5 ha y 50.000 ha.');
+      return;
+    }
+
+    const capacidadNum = Number(formData.capacidad_maxima);
+    if (!Number.isInteger(capacidadNum) || capacidadNum < 1 || capacidadNum > 10000) {
+      setError('La capacidad máxima debe ser un número entero entre 1 y 10.000 cabezas.');
+      return;
+    }
+
+    const payload = {
+      nombre: nombreLimpio,
+      superficie: superficieNum,
+      hectareas: superficieNum,
+      capacidad_maxima: capacidadNum,
+      capacidad: capacidadNum,
+    };
+
     try {
       if (id) {
-        await axios.put(`http://localhost:3000/api/potreros/${id}`, form, config);
+        await axios.put(`${API_URL}/potreros/${id}`, payload, getHeaders());
       } else {
-        await axios.post('http://localhost:3000/api/potreros', form, config);
+        await axios.post(`${API_URL}/potreros`, payload, getHeaders());
       }
       navigate('/potreros');
-    } catch (error) { alert('Error al guardar el potrero'); }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al guardar el potrero.');
+    }
   };
 
   return (
-    <div className="card shadow mt-4 mx-auto" style={{ maxWidth: '500px' }}>
-      <div className="card-body">
-        <h3 className="text-success mb-3">{id ? 'Editar Potrero' : 'Nuevo Potrero'}</h3>
+    <div className="container mt-4" style={{ maxWidth: '650px' }}>
+      <div className="card shadow-sm p-4">
+        <h3 className="text-success mb-4">{id ? 'Editar Potrero' : 'Nuevo Potrero'}</h3>
+
+        {error && <div className="alert alert-danger">{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label>Nombre:</label>
-            <input type="text" className="form-control" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} required />
+            <label className="form-label">Nombre:</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Ej: Potrero Norte 1"
+              maxLength={50}
+              value={formData.nombre}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              required
+            />
           </div>
+
           <div className="mb-3">
-            <label>Superficie (ha):</label>
-            <input type="number" step="0.1" className="form-control" value={form.superficie} onChange={e => setForm({ ...form, superficie: e.target.value })} required />
+            <label className="form-label">Superficie (ha):</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.5"
+              max="50000"
+              className="form-control"
+              placeholder="Ej: 45.5"
+              value={formData.superficie}
+              onChange={(e) => setFormData({ ...formData, superficie: e.target.value })}
+              required
+            />
+            <small className="text-muted">Entre 0,5 ha y 50.000 ha.</small>
           </div>
+
           <div className="mb-3">
-            <label>Capacidad máxima (cabezas):</label>
-            <input type="number" className="form-control" value={form.capacidad} onChange={e => setForm({ ...form, capacidad: e.target.value })} required />
+            <label className="form-label">Capacidad máxima (cabezas):</label>
+            <input
+              type="number"
+              step="1"
+              min="1"
+              max="10000"
+              className="form-control"
+              placeholder="Ej: 80"
+              value={formData.capacidad_maxima}
+              onChange={(e) => setFormData({ ...formData, capacidad_maxima: e.target.value })}
+              required
+            />
+            <small className="text-muted">Número entero entre 1 y 10.000 cabezas.</small>
           </div>
-          <button type="submit" className="btn btn-success">Guardar</button>
-          <button type="button" onClick={() => navigate('/potreros')} className="btn btn-secondary ms-2">Cancelar</button>
+
+          <div className="mt-4 d-flex gap-2">
+            <button type="submit" className="btn btn-success">
+              Guardar
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate('/potreros')}
+            >
+              Cancelar
+            </button>
+          </div>
         </form>
       </div>
     </div>
   );
-};
-
-export default PotreroForm;
+}
