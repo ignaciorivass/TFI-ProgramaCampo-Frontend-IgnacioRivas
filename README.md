@@ -60,5 +60,15 @@ Una vez ejecutado, la aplicación estará disponible en la dirección:
 
 ## 🔐 Roles y Permisos en la Interfaz
 
-* **Administrador:** Acceso completo a la creación, lectura y eliminación de registros en todos los módulos (Animales, Potreros, Movimientos y Sanidad).
+* **Administrador:** Acceso a los módulos de gestión, incluida la consulta y eliminación de usuarios. No puede eliminar su propia cuenta ni al último administrador.
 * **Empleado / Peón:** Acceso de lectura a catálogos e historial, y registro de vacunas y movimientos. Las funciones sensibles de eliminación permanecen ocultas e inhabilitadas.
+
+## Dashboard y gráficos (novedades)
+
+**Dependencia nueva:** `recharts`. Ejecutar `npm install` después de actualizar.
+
+- `/dashboard` (en el menú figura como **Inicio**): tarjetas de resumen, 4 gráficos (Recharts) y últimos animales registrados.
+- `/usuarios`: listado y eliminación de cuentas, visible solo para administradores. El registro público crea cuentas con rol Peón.
+- `src/components/charts/`: gráficos reutilizables (`GraficoArea`, `GraficoBarras`, `GraficoDonut`) y `TarjetaGrafico` (estados de carga, error y vacío).
+- `src/config.js`: URL del backend y encabezado con el token.
+- Foto del animal: se elige en el formulario de Animales y se muestra en el listado y el dashboard.

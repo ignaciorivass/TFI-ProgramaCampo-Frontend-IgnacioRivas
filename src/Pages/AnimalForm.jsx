@@ -58,11 +58,13 @@ const RAZAS_POR_ESPECIE = {
 
 const obtenerFechaHoy = () => {
   const ahora = new Date();
+  // Compensa la zona horaria para que el input date reciba la fecha local correcta.
   const offset = ahora.getTimezoneOffset() * 60000;
   return new Date(ahora.getTime() - offset).toISOString().split('T')[0];
 };
 
 export default function AnimalForm() {
+  // El parámetro id distingue el alta de un animal de la edición de uno existente.
   const { id } = useParams();
   const navigate = useNavigate();
   const hoy = obtenerFechaHoy();
@@ -70,6 +72,8 @@ export default function AnimalForm() {
   const [potreros, setPotreros] = useState([]);
   const [animales, setAnimales] = useState([]);
   const [error, setError] = useState('');
+
+  const [guardando, setGuardando] = useState(false);
 
   const [formData, setFormData] = useState({
     caravana: 'BO-',
@@ -92,6 +96,7 @@ export default function AnimalForm() {
   useEffect(() => {
     const cargarDatos = async () => {
       try {
+        // Potreros y animales se cargan juntos; ambos se necesitan para completar el formulario.
         const [resPotreros, resAnimales] = await Promise.all([
           axios.get(`${API_URL}/potreros`, getHeaders()),
           axios.get(`${API_URL}/animales`, getHeaders()),
@@ -125,6 +130,7 @@ export default function AnimalForm() {
   }, [id]);
 
   const handleEspecieChange = (e) => {
+    // Al cambiar especie, actualiza el prefijo de caravana y reinicia la raza seleccionada.
     const nuevaEspecie = e.target.value;
     const nuevoPrefijo = PREFIJOS_ESPECIE[nuevaEspecie] || 'BO';
 
@@ -159,6 +165,7 @@ export default function AnimalForm() {
     e.preventDefault();
     setError('');
 
+    // Comprueba las reglas principales antes de construir los datos para la API.
     const prefijoEsperado =
       id && formData.caravana.includes('-')
         ? formData.caravana.split('-')[0]
@@ -186,6 +193,7 @@ export default function AnimalForm() {
       return;
     }
 
+    // Normaliza valores opcionales y numéricos según el estado y origen del animal.
     const payload = {
       ...formData,
       caravana: formData.caravana.trim(),
@@ -196,23 +204,28 @@ export default function AnimalForm() {
       padre_id: formData.origen === 'Nacimiento' && formData.padre_id ? formData.padre_id : null,
     };
 
+    setGuardando(true);
     try {
       if (id) {
         await axios.put(`${API_URL}/animales/${id}`, payload, getHeaders());
       } else {
         await axios.post(`${API_URL}/animales`, payload, getHeaders());
       }
+
       navigate('/animales');
     } catch (err) {
       setError(
         err.response?.data?.message ||
           'Error al guardar el animal. Verificá que la caravana no esté repetida.'
       );
+    } finally {
+      setGuardando(false);
     }
   };
 
   const prefijoActual = PREFIJOS_ESPECIE[formData.especie] || 'BO';
   const razasDisponibles = RAZAS_POR_ESPECIE[formData.especie] || [];
+  // Evita asociar al animal consigo mismo y limita los progenitores a su especie y sexo.
   const hembrasDisponibles = animales.filter(
     (a) => a.sexo === 'Hembra' && a.especie === formData.especie && String(a.id) !== String(id)
   );
@@ -411,8 +424,8 @@ export default function AnimalForm() {
           </div>
 
           <div className="mt-4 d-flex gap-2">
-            <button type="submit" className="btn btn-success">
-              Guardar
+            <button type="submit" className="btn btn-success" disabled={guardando}>
+              {guardando ? 'Guardando...' : 'Guardar'}
             </button>
             <button
               type="button"

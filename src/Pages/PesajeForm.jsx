@@ -4,20 +4,25 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:3000/api';
 
+// Devuelve la fecha local en formato YYYY-MM-DD, que es el formato de los inputs date.
 const obtenerFechaHoy = () => {
   const ahora = new Date();
+  // Ajusta la fecha a la zona horaria local antes de convertirla a texto ISO.
   const offset = ahora.getTimezoneOffset() * 60000;
   return new Date(ahora.getTime() - offset).toISOString().split('T')[0];
 };
 
 export default function PesajeForm() {
+  // Si existe un id en la URL, el formulario se usa para editar un pesaje existente.
   const { id } = useParams();
   const navigate = useNavigate();
   const hoy = obtenerFechaHoy();
 
+  // Estado para las opciones del selector, los errores y los campos del formulario.
   const [animales, setAnimales] = useState([]);
   const [error, setError] = useState('');
 
+  // Mantiene centralizados los valores que se muestran y envían desde el formulario.
   const [formData, setFormData] = useState({
     animal_id: '',
     fecha: hoy,
@@ -25,6 +30,7 @@ export default function PesajeForm() {
     observaciones: '',
   });
 
+  // Las peticiones protegidas incluyen el token de sesión en el encabezado.
   const getHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
   });
@@ -32,10 +38,12 @@ export default function PesajeForm() {
   useEffect(() => {
     const cargarDatos = async () => {
       try {
+        // Carga los animales disponibles para llenar el selector.
         const resAnim = await axios.get(`${API_URL}/animales`, getHeaders());
         setAnimales(resAnim.data);
 
         if (id) {
+          // En modo edición busca el pesaje y precarga sus valores en el formulario.
           const resPesajes = await axios.get(`${API_URL}/pesajes`, getHeaders());
           const pesaje = resPesajes.data.find((p) => String(p.id) === String(id));
           if (pesaje) {
@@ -59,6 +67,7 @@ export default function PesajeForm() {
     e.preventDefault();
     setError('');
 
+    // Valida los datos antes de enviar la petición al servidor.
     if (!formData.animal_id) {
       setError('Debe seleccionar un animal.');
       return;
@@ -80,6 +89,7 @@ export default function PesajeForm() {
       return;
     }
 
+    // Convierte los campos numéricos y limpia los espacios de las observaciones.
     const payload = {
       animal_id: Number(formData.animal_id),
       fecha: formData.fecha,
@@ -88,6 +98,7 @@ export default function PesajeForm() {
     };
 
     try {
+      // Actualiza el registro si se está editando; de lo contrario, crea uno nuevo.
       if (id) {
         await axios.put(`${API_URL}/pesajes/${id}`, payload, getHeaders());
       } else {
@@ -99,6 +110,8 @@ export default function PesajeForm() {
     }
   };
 
+  // Al crear un pesaje solo se ofrecen animales activos.
+  // Al editar, se muestran todos para conservar el animal previamente asociado.
   const animalesDisponibles = id
     ? animales
     : animales.filter((a) => a.estado === 'Activo');
@@ -115,6 +128,7 @@ export default function PesajeForm() {
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Animal (Caravana):</label>
+            {/* El selector está vinculado al estado para reflejar cualquier cambio. */}
             <select
               className="form-select"
               value={formData.animal_id}

@@ -14,6 +14,7 @@ const VACUNAS_BASE = [
 
 const obtenerFechaHoy = () => {
   const ahora = new Date();
+  // Compensa la zona horaria local para completar correctamente el campo de fecha.
   const offset = ahora.getTimezoneOffset() * 60000;
   return new Date(ahora.getTime() - offset).toISOString().split('T')[0];
 };
@@ -41,6 +42,7 @@ export default function VacunacionForm() {
   useEffect(() => {
     const cargarDatos = async () => {
       try {
+        // Carga animales y catálogo; si se edita, también recupera el registro seleccionado.
         const resAnim = await axios.get(`${API_URL}/animales`, getHeaders());
         setAnimales(resAnim.data);
 
@@ -75,6 +77,7 @@ export default function VacunacionForm() {
     e.preventDefault();
     setError('');
 
+    // Verifica primero que haya un animal y una fecha permitida.
     if (!formData.animal_id) {
       setError('Debe seleccionar un animal.');
       return;
@@ -102,6 +105,7 @@ export default function VacunacionForm() {
     const unidad = matchDosis[2] ? matchDosis[2].toLowerCase() : 'ml';
     const dosisFormateada = `${matchDosis[1].replace(',', '.')} ${unidad}`;
 
+    // Envía identificadores numéricos y la dosis ya normalizada.
     const payload = {
       animal_id: Number(formData.animal_id),
       vacuna_id: Number(formData.vacuna_id),
@@ -110,6 +114,7 @@ export default function VacunacionForm() {
     };
 
     try {
+      // PUT modifica un registro existente y POST registra una nueva aplicación.
       if (id) {
         await axios.put(`${API_URL}/vacunaciones/${id}`, payload, getHeaders());
       } else {

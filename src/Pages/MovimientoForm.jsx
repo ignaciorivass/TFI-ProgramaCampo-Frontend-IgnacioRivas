@@ -6,6 +6,7 @@ const API_URL = 'http://localhost:3000/api';
 
 const obtenerFechaHoy = () => {
   const ahora = new Date();
+  // Ajusta la fecha a la zona horaria local antes de usarla como valor del input date.
   const offset = ahora.getTimezoneOffset() * 60000;
   return new Date(ahora.getTime() - offset).toISOString().split('T')[0];
 };
@@ -89,6 +90,7 @@ export default function MovimientoForm() {
     setFormData({
       ...formData,
       tipo: nuevoTipo,
+      // El destino solo es necesario para traslados; ventas y bajas no lo conservan.
       destino_potrero_id: nuevoTipo === 'Traslado' ? formData.destino_potrero_id : '',
     });
   };
@@ -97,6 +99,7 @@ export default function MovimientoForm() {
     e.preventDefault();
     setError('');
 
+    // Valida animal, fecha y reglas específicas de un traslado antes de guardar.
     if (!formData.animal_id) {
       setError('Debe seleccionar un animal.');
       return;
@@ -118,6 +121,7 @@ export default function MovimientoForm() {
       }
     }
 
+    // Los campos de potrero se envían como null cuando no corresponden al tipo elegido.
     const payload = {
       ...formData,
       origen_potrero_id: formData.origen_potrero_id || null,
@@ -125,6 +129,7 @@ export default function MovimientoForm() {
     };
 
     try {
+      // En edición actualiza el movimiento existente; en alta crea uno nuevo.
       if (id) {
         await axios.put(`${API_URL}/movimientos/${id}`, payload, getHeaders());
       } else {

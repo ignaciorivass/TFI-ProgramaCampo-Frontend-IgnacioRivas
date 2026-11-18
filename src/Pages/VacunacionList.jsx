@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
+import { API_URL, authHeaders } from '../config';
+import ModalConfirmar from '../components/ModalConfirmar';
 
-const API_URL = 'http://localhost:3000/api';
-
+// Catálogo base por si el backend aún no devuelve el catálogo
 const VACUNAS_BASE = [
-  { id: 1, nombre: 'Fiebre Aftosa - Biogénesis Bagó', enfermedad: 'Fiebre Aftosa' },
-  { id: 2, nombre: 'Brucelosis Cepa 19', enfermedad: 'Brucelosis Bovina' },
-  { id: 3, nombre: 'Carbunclo Bacteridiano', enfermedad: 'Carbunclo' },
-  { id: 4, nombre: 'Clostridiosis Polivalente', enfermedad: 'Mancha y Gangrena' },
-  { id: 5, nombre: 'Ivermectina Antiparasitaria', enfermedad: 'Parásitos internos y externos' },
+  { id: 1, nombre: 'Fiebre Aftosa - Biogénesis Bagó',   enfermedad: 'Fiebre Aftosa' },
+  { id: 2, nombre: 'Brucelosis Cepa 19',                 enfermedad: 'Brucelosis Bovina' },
+  { id: 3, nombre: 'Carbunclo Bacteridiano',             enfermedad: 'Carbunclo' },
+  { id: 4, nombre: 'Clostridiosis Polivalente',          enfermedad: 'Mancha y Gangrena' },
+  { id: 5, nombre: 'Ivermectina Antiparasitaria',        enfermedad: 'Parásitos internos y externos' },
 ];
 
 const formatearFecha = (fechaStr) => {
@@ -19,70 +21,62 @@ const formatearFecha = (fechaStr) => {
   return dia && mes && anio ? `${dia}/${mes}/${anio}` : soloFecha;
 };
 
-const obtenerEsAdmin = () => {
-  try {
-    const userDirecto = JSON.parse(localStorage.getItem('user') || 'null');
-    if (userDirecto?.rol) return userDirecto.rol === 'Administrador';
-
-    const zustandStorage = JSON.parse(localStorage.getItem('auth-storage') || 'null');
-    if (zustandStorage?.state?.user?.rol) {
-      return zustandStorage.state.user.rol === 'Administrador';
-    }
-  } catch {
-    // Ignora error
-  }
-  return localStorage.getItem('rol') === 'Administrador';
-};
-
 export default function VacunacionList() {
   const navigate = useNavigate();
-  const isAdmin = obtenerEsAdmin();
+  const user     = useAuthStore((s) => s.user);
+  const isAdmin  = user?.rol === 'Administrador';
 
   const [vacunaciones, setVacunaciones] = useState([]);
-  const [animales, setAnimales] = useState([]);
-  const [vacunas, setVacunas] = useState(VACUNAS_BASE);
+  const [animales,     setAnimales]     = useState([]);
+  const [vacunas,      setVacunas]      = useState(VACUNAS_BASE);
+  const [cargando,     setCargando]     = useState(true);
+  const [error,        setError]        = useState('');
 
   const [filtroVacuna, setFiltroVacuna] = useState('');
-  const [filtroFecha, setFiltroFecha] = useState('');
-  const [error, setError] = useState('');
+  const [filtroFecha,  setFiltroFecha]  = useState('');
 
-  const getHeaders = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-  });
+  const [modalVisible,   setModalVisible]   = useState(false);
+  const [idParaEliminar, setIdParaEliminar] = useState(null);
 
   const cargarDatos = async () => {
+    setCargando(true);
     setError('');
     try {
+      // Registros y animales se cargan en paralelo
       const [resVac, resAnim] = await Promise.all([
-        axios.get(`${API_URL}/vacunaciones`, getHeaders()),
-        axios.get(`${API_URL}/animales`, getHeaders()),
+        axios.get(`${API_URL}/vacunaciones`, authHeaders()),
+        axios.get(`${API_URL}/animales`,     authHeaders()),
       ]);
       setVacunaciones(resVac.data);
       setAnimales(resAnim.data);
 
+      // El catálogo de vacunas puede no estar; se mantiene el base si falla
       try {
-        const resCatalogo = await axios.get(`${API_URL}/vacunaciones/vacunas`, getHeaders());
-        if (resCatalogo.data?.length > 0) setVacunas(resCatalogo.data);
-      } catch {
-        // Si la sub-ruta aún no responde, usa el catálogo base sin romper la vista
-      }
+        const resCat = await axios.get(`${API_URL}/vacunaciones/vacunas`, authHeaders());
+        if (resCat.data?.length > 0) setVacunas(resCat.data);
+      } catch { /* mantiene el catálogo base */ }
     } catch (err) {
       console.error(err);
       setError('Error al cargar los registros sanitarios.');
+    } finally {
+      setCargando(false);
     }
   };
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+  useEffect(() => { cargarDatos(); }, []);
 
-  const handleEliminar = async (id) => {
-    if (!window.confirm('¿Seguro que deseas eliminar este registro de vacunación?')) return;
+  const pedirConfirmacion = (id) => {
+    setIdParaEliminar(id);
+    setModalVisible(true);
+  };
+
+  const confirmarEliminar = async () => {
+    setModalVisible(false);
     try {
-      await axios.delete(`${API_URL}/vacunaciones/${id}`, getHeaders());
+      await axios.delete(`${API_URL}/vacunaciones/${idParaEliminar}`, authHeaders());
       cargarDatos();
     } catch (err) {
-      alert(err.response?.data?.message || 'No se pudo eliminar el registro.');
+      setError(err.response?.data?.message || 'No se pudo eliminar el registro.');
     }
   };
 
@@ -93,9 +87,7 @@ export default function VacunacionList() {
   };
 
   const obtenerInfoVacuna = (reg) => {
-    if (reg.vacuna_nombre) {
-      return { nombre: reg.vacuna_nombre, enfermedad: reg.enfermedad || '-' };
-    }
+    if (reg.vacuna_nombre) return { nombre: reg.vacuna_nombre, enfermedad: reg.enfermedad || '-' };
     const vac = vacunas.find((v) => String(v.id) === String(reg.vacuna_id));
     return vac
       ? { nombre: vac.nombre, enfermedad: vac.enfermedad || '-' }
@@ -113,28 +105,33 @@ export default function VacunacionList() {
   const animalesCubiertos = new Set(vacunaciones.map((v) => v.animal_id)).size;
 
   return (
-    <div className="container mt-4">
+    <div>
+      <ModalConfirmar
+        visible={modalVisible}
+        titulo="Eliminar vacunación"
+        mensaje="¿Seguro que querés eliminar este registro de vacunación?"
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setModalVisible(false)}
+      />
+
       <div className="d-none d-print-block mb-3 border-bottom pb-2">
-        <h4 className="mb-0">Sistema Ganadero - Reporte Sanitario y Vacunaciones</h4>
-        <small className="text-muted">Fecha de emisión: {new Date().toLocaleDateString('es-AR')}</small>
+        <h4 className="mb-0">Sistema Ganadero – Reporte Sanitario y Vacunaciones</h4>
+        <small className="text-muted">Fecha: {new Date().toLocaleDateString('es-AR')}</small>
       </div>
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
         <h2 className="mb-0">Control Sanitario y Vacunaciones</h2>
         <div className="d-flex gap-2 d-print-none">
-          <button className="btn btn-outline-secondary" onClick={() => window.print()}>
-            Imprimir Reporte
-          </button>
-          <button className="btn btn-success" onClick={() => navigate('/vacunaciones/nuevo')}>
-            Registrar Vacunación
-          </button>
+          <button className="btn btn-outline-secondary" onClick={() => window.print()}>Imprimir</button>
+          <button className="btn btn-success" onClick={() => navigate('/vacunaciones/nuevo')}>+ Registrar Vacunación</button>
         </div>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
+      {/* Tarjetas de resumen */}
       <div className="row g-3 mb-4">
-        <div className="col-md-4">
+        <div className="col-sm-4">
           <div className="card bg-success text-white shadow-sm">
             <div className="card-body">
               <small>Dosis Aplicadas</small>
@@ -142,7 +139,7 @@ export default function VacunacionList() {
             </div>
           </div>
         </div>
-        <div className="col-md-4">
+        <div className="col-sm-4">
           <div className="card bg-primary text-white shadow-sm">
             <div className="card-body">
               <small>Animales Tratados</small>
@@ -150,7 +147,7 @@ export default function VacunacionList() {
             </div>
           </div>
         </div>
-        <div className="col-md-4">
+        <div className="col-sm-4">
           <div className="card bg-secondary text-white shadow-sm">
             <div className="card-body">
               <small>Última Aplicación</small>
@@ -162,107 +159,81 @@ export default function VacunacionList() {
         </div>
       </div>
 
-      {/* Filtros por Vacuna y Fecha */}
+      {/* Filtros */}
       <div className="card p-3 mb-4 shadow-sm d-print-none">
         <div className="row g-2 align-items-center">
           <div className="col-md-6">
-            <select
-              className="form-select"
-              value={filtroVacuna}
-              onChange={(e) => setFiltroVacuna(e.target.value)}
-            >
+            <select className="form-select" value={filtroVacuna} onChange={(e) => setFiltroVacuna(e.target.value)}>
               <option value="">Todas las Vacunas</option>
               {vacunas.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.nombre}
-                </option>
+                <option key={v.id} value={v.id}>{v.nombre}</option>
               ))}
             </select>
           </div>
-
           <div className={hayFiltros ? 'col-md-5' : 'col-md-6'}>
-            <input
-              type="date"
-              className="form-control"
-              value={filtroFecha}
-              onChange={(e) => setFiltroFecha(e.target.value)}
-              title="Filtrar por fecha"
-            />
+            <input type="date" className="form-control" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)} title="Filtrar por fecha" />
           </div>
-
           {hayFiltros && (
             <div className="col-md-1">
-              <button
-                className="btn btn-outline-danger w-100"
-                onClick={() => {
-                  setFiltroVacuna('');
-                  setFiltroFecha('');
-                }}
-                title="Limpiar filtros"
-              >
-                ✕
-              </button>
+              <button className="btn btn-outline-danger w-100" onClick={() => { setFiltroVacuna(''); setFiltroFecha(''); }} title="Limpiar filtros">Limpiar</button>
             </div>
           )}
         </div>
       </div>
 
-      <div className="table-responsive shadow-sm rounded">
-        <table className="table table-hover align-middle mb-0 bg-white">
-          <thead className="table-dark">
-            <tr>
-              <th>Fecha Aplicación</th>
-              <th>Caravana</th>
-              <th>Vacuna / Tratamiento</th>
-              <th>Enfermedad Prevenida</th>
-              <th>Dosis</th>
-              <th className="d-print-none">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {registrosFiltrados.length === 0 ? (
+      {cargando && (
+        <div className="text-center py-5 text-muted">
+          <span className="spinner-border spinner-border-sm me-2" />
+          Cargando vacunaciones...
+        </div>
+      )}
+
+      {!cargando && (
+        <div className="table-responsive shadow-sm rounded">
+          <table className="table table-hover align-middle mb-0 bg-white">
+            <thead className="table-dark">
               <tr>
-                <td colSpan="6" className="text-center py-4 text-muted">
-                  No hay vacunaciones registradas para los filtros seleccionados.
-                </td>
+                <th>Fecha Aplicación</th>
+                <th>Caravana</th>
+                <th>Vacuna / Tratamiento</th>
+                <th>Enfermedad Prevenida</th>
+                <th>Dosis</th>
+                <th className="d-print-none">Acciones</th>
               </tr>
-            ) : (
-              registrosFiltrados.map((v) => {
-                const infoVac = obtenerInfoVacuna(v);
-                return (
-                  <tr key={v.id}>
-                    <td>{formatearFecha(v.fecha_aplicacion)}</td>
-                    <td className="fw-bold">{obtenerCaravana(v)}</td>
-                    <td>{infoVac.nombre}</td>
-                    <td>
-                      <span className="badge bg-info text-dark">{infoVac.enfermedad}</span>
-                    </td>
-                    <td>{v.dosis}</td>
-                    <td className="d-print-none">
-                      <div className="d-flex gap-1">
-                        <button
-                          className="btn btn-warning btn-sm"
-                          onClick={() => navigate(`/vacunaciones/editar/${v.id}`)}
-                        >
-                          Editar
-                        </button>
-                        {isAdmin && (
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleEliminar(v.id)}
-                          >
-                            Eliminar
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {registrosFiltrados.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-5 text-muted">
+                    No hay vacunaciones para los filtros seleccionados.
+                  </td>
+                </tr>
+              ) : (
+                registrosFiltrados.map((v) => {
+                  const info = obtenerInfoVacuna(v);
+                  return (
+                    <tr key={v.id}>
+                      <td>{formatearFecha(v.fecha_aplicacion)}</td>
+                      <td className="fw-bold">{obtenerCaravana(v)}</td>
+                      <td>{info.nombre}</td>
+                      <td><span className="badge bg-info text-dark">{info.enfermedad}</span></td>
+                      <td>{v.dosis}</td>
+                      <td className="d-print-none">
+                        <div className="d-flex gap-1">
+                          <button className="btn btn-warning btn-sm" onClick={() => navigate(`/vacunaciones/editar/${v.id}`)}>Editar</button>
+                          {isAdmin && (
+                            <button className="btn btn-danger btn-sm" onClick={() => pedirConfirmacion(v.id)}>Eliminar</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

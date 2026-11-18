@@ -1,42 +1,75 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
+// Opciones del menú principal.
+const ENLACES = [
+  { ruta: '/dashboard', texto: 'Inicio' },
+  { ruta: '/animales', texto: 'Animales' },
+  { ruta: '/potreros', texto: 'Potreros' },
+  { ruta: '/movimientos', texto: 'Movimientos' },
+  { ruta: '/vacunaciones', texto: 'Sanidad' },
+  { ruta: '/pesajes', texto: 'Pesajes' },
+  { ruta: '/usuarios', texto: 'Usuarios', soloAdmin: true },
+];
+
 const Navbar = () => {
-  const user = useAuthStore(state => state.user);
-  const logout = useAuthStore(state => state.logout);
+  // Lee los datos de sesión compartidos para mostrar el usuario y cerrar sesión.
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
+  const esAdmin = user?.rol === 'Administrador';
+  // En pantallas chicas el menú se despliega con el botón de hamburguesa.
+  const [abierto, setAbierto] = useState(false);
 
   const handleLogout = () => {
+    // Limpia la sesión global y vuelve a la pantalla de acceso.
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   if (!user) return null;
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4 px-4 shadow-sm d-print-none">
-      <div className="container-fluid d-flex justify-content-between align-items-center">
-        <div className="d-flex align-items-center gap-4">
-          <Link className="navbar-brand fw-bold text-success m-0" to="/animales">
-            🚜 Sistema Ganadero
-          </Link>
-          <div className="navbar-nav d-flex flex-row gap-3">
-            <Link className="nav-link" to="/animales">Animales</Link>
-            <Link className="nav-link" to="/potreros">Potreros</Link>
-            <Link className="nav-link" to="/movimientos">Movimientos</Link>
-            <Link className="nav-link" to="/vacunaciones">Sanidad</Link>
-            <Link className="nav-link" to="/pesajes">Pesajes</Link>
-          </div>
-        </div>
+    <nav className="navbar navbar-expand-lg navbar-campo d-print-none">
+      <div className="container-fluid px-3 px-lg-4">
+        <Link className="navbar-brand fw-bold" to="/dashboard" onClick={() => setAbierto(false)}>
+          Sistema Ganadero
+        </Link>
 
-        <div className="d-flex align-items-center gap-3">
-          <span className="text-light">
-            {user.nombre} ({user.rol})
-          </span>
-          <button onClick={handleLogout} className="btn btn-outline-light btn-sm">
-            Salir
-          </button>
+        <button
+          className="navbar-toggler"
+          type="button"
+          aria-label="Abrir menú"
+          aria-expanded={abierto}
+          onClick={() => setAbierto(!abierto)}
+        >
+          <span className="navbar-toggler-icon" />
+        </button>
+
+        <div className={`collapse navbar-collapse ${abierto ? 'show' : ''}`}>
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+            {ENLACES.filter((enlace) => !enlace.soloAdmin || esAdmin).map((e) => (
+              <li className="nav-item" key={e.ruta}>
+                <NavLink
+                  to={e.ruta}
+                  className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  onClick={() => setAbierto(false)}
+                >
+                  {e.texto}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+
+          <div className="d-flex align-items-center gap-3">
+            <span className="text-light small">
+              {user.nombre} <span className="badge bg-light text-dark ms-1">{user.rol}</span>
+            </span>
+            <button onClick={handleLogout} className="btn btn-outline-light btn-sm">
+              Salir
+            </button>
+          </div>
         </div>
       </div>
     </nav>

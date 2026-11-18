@@ -23,6 +23,7 @@ export default function PotreroForm() {
     if (!id) return;
     const cargarPotrero = async () => {
       try {
+        // Busca el potrero existente y carga sus datos para permitir la edición.
         const res = await axios.get(`${API_URL}/potreros`, getHeaders());
         const potrero = res.data.find((p) => String(p.id) === String(id));
         if (potrero) {
@@ -44,6 +45,7 @@ export default function PotreroForm() {
     e.preventDefault();
     setError('');
 
+    // Valida nombre, superficie y capacidad antes de enviar los datos al servidor.
     const nombreLimpio = formData.nombre.trim();
     if (nombreLimpio.length < 3 || nombreLimpio.length > 50 || !/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(nombreLimpio)) {
       setError('El nombre del potrero debe tener entre 3 y 50 caracteres e incluir letras (Ej: Potrero Norte 1).');
@@ -62,6 +64,7 @@ export default function PotreroForm() {
       return;
     }
 
+    // Convierte los campos numéricos y conserva nombres usados por ambas versiones de la API.
     const payload = {
       nombre: nombreLimpio,
       superficie: superficieNum,
@@ -71,6 +74,7 @@ export default function PotreroForm() {
     };
 
     try {
+      // Usa PUT para editar y POST para registrar un potrero nuevo.
       if (id) {
         await axios.put(`${API_URL}/potreros/${id}`, payload, getHeaders());
       } else {

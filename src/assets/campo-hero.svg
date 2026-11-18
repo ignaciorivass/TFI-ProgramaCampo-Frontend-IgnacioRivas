@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Paisaje de campo con colinas verdes al atardecer">
+  <defs>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6fb3d9"/>
+      <stop offset="0.65" stop-color="#f6e3b4"/>
+      <stop offset="1" stop-color="#f9d28a"/>
+    </linearGradient>
+    <linearGradient id="colina1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fae62"/>
+      <stop offset="1" stop-color="#5b8f4a"/>
+    </linearGradient>
+    <linearGradient id="colina2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f8a43"/>
+      <stop offset="1" stop-color="#34692f"/>
+    </linearGradient>
+    <linearGradient id="colina3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f6b3a"/>
+      <stop offset="1" stop-color="#1f4d2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#cielo)"/>
+  <circle cx="900" cy="250" r="70" fill="#fff4cf" opacity="0.9"/>
+  <circle cx="900" cy="250" r="110" fill="#fff4cf" opacity="0.25"/>
+  <g fill="#ffffff" opacity="0.85">
+    <ellipse cx="220" cy="120" rx="90" ry="24"/><ellipse cx="280" cy="106" rx="60" ry="22"/><ellipse cx="170" cy="108" rx="50" ry="18"/>
+    <ellipse cx="640" cy="80" rx="80" ry="20"/><ellipse cx="700" cy="68" rx="50" ry="18"/>
+  </g>
+  <path d="M0 360 C150 300 300 310 450 345 C620 385 760 300 920 320 C1050 336 1130 350 1200 330 L1200 600 L0 600 Z" fill="url(#colina1)"/>
+  <path d="M0 430 C180 380 330 400 520 430 C700 460 860 390 1020 405 C1110 413 1160 430 1200 425 L1200 600 L0 600 Z" fill="url(#colina2)"/>
+  <path d="M0 510 C200 470 380 490 580 512 C780 534 980 480 1200 500 L1200 600 L0 600 Z" fill="url(#colina3)"/>
+  <g stroke="#7a4f2a" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.9">
+    <path d="M60 470 L1140 470"/><path d="M60 492 L1140 492"/>
+    <path d="M100 456 V512"/><path d="M260 456 V512"/><path d="M420 456 V512"/><path d="M580 456 V512"/>
+    <path d="M740 456 V512"/><path d="M900 456 V512"/><path d="M1060 456 V512"/>
+  </g>
+  <g>
+    <rect x="1010" y="330" width="10" height="46" fill="#5a3d24"/>
+    <circle cx="1015" cy="318" r="34" fill="#2f6b3a"/><circle cx="995" cy="334" r="24" fill="#3a7d44"/><circle cx="1036" cy="334" r="24" fill="#2b6234"/>
+    <rect x="150" y="346" width="8" height="38" fill="#5a3d24"/>
+    <circle cx="154" cy="336" r="26" fill="#3a7d44"/><circle cx="138" cy="350" r="18" fill="#2f6b3a"/>
+  </g>
+</svg>
